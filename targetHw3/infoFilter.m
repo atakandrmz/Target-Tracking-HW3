@@ -59,6 +59,8 @@ hold on;
      for i=1:stepSize
         clf;
         hold on;
+        xlim([-5 30])
+        ylim([-6 20])
 %         xlim([-5 stepSize*vx+5])
 %         ylim([-5 stepSize*vy+5])
 
@@ -100,7 +102,7 @@ plot(y(1,i),y(2,i),'b*')
         pause(1)
         
         grid minor
-        legend('Initial Random Data','Prediction Update','Actual Position','Measurement Update')
+        legend('Initial Random Data','Prediction Update','Measurement','Measurement Update')
         title('Information Filter Implementation for Constant Velocity Model Step',i)
 
      end
