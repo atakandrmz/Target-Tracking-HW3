@@ -54,8 +54,10 @@ hold on;
      for i=1:stepSize
         clf;
         hold on;
-        xlim([-5 stepSize*T*vx+5])
-        ylim([-5 stepSize*T*vy+5])
+%         xlim([-5-10 stepSize*T*vx+5+100])
+%         ylim([-5-10 stepSize*T*vy+5+100])
+        xlim([-10 10])
+        ylim([-6 12])
 
         xogz = A*xzgz  % Predicton Update
         pogz = A*pzgz*A' + Q
@@ -67,38 +69,58 @@ hold on;
         k1 = pogz*C'*inv(sogz)
         yhat1 = C*xogz
         estimation = [estimation yhat1]
-        
-        sz = [1 stepSize];
-        gateX = unifrnd(-3*pogz(1,1),3*pogz(1,1),sz)
-        gateY = unifrnd(-3*pogz(3,3),3*pogz(3,3),sz)
 
-       cX = 0
+        falseAlarmNum = 100
+        sz = [1 falseAlarmNum];
+        gateX = unifrnd(-5, stepSize*T*vx+5,sz)
+        gateY = unifrnd(-5, stepSize*T*vy+5,sz)
+
+       c = 0
        cY = 0
       
-           
-        for k = 1:stepSize
-            if (abs(gateX(1,k)) == min(abs(gateX(1,:))))
-                cX = k
-            end
-            if (abs(gateY(1,k)) == min(abs(gateY(1,:))))
-                cY = k
+          gate = [gateX(1,:); gateY(1,:)]
+          minNorm = 1000
+        for k = 1:falseAlarmNum
+            if norm(gate(:,k)) < minNorm
+                minNorm = norm(gate(:,k))
+                c = k
             end
         end
         
-        %circle([y(1,i) y(2,i)],sqrt(gateX(1,cX)^2+gateY(1,cY)^2),1000,'--m')
+%         for k = 1:stepSize
+%             if (norm([gateX(1,k); gateY(1,k)]) == minNorm)
+%                 c = k
+%             end
+% %             if (abs(gateY(1,k)) == min(abs(gateY(1,:))))
+% %                 cY = k
+% %             end
+%         end
+        
+        circle([y(1,i) y(2,i)],minNorm,1000,'--m')
         plot(y(1,i),y(2,i),'b*')
 
-        y(1,i) = gateX(1,cX) + y(1,i)
-        y(2,i) = gateY(1,cY) + y(2,i)
-        plot(y(1,i),y(2,i),'g*')
+%         y(1,i) = gateX(1,c) + y(1,i)
+%         y(2,i) = gateY(1,c) + y(2,i)
+%         plot(y(1,i),y(2,i),'g*')
 
+        gammaG= chi2inv(0.9,2)
+
+        for k = 1:falseAlarmNum
+
+            if ((y(:,i)+gate(:,k)-yhat1)'*inv(sogz)*(y(:,i)+gate(:,k)-yhat1) < gammaG)
+                y(:,i) = y(:,i)+gate(:,k)
+            end
+        end
+        plot(y(1,i),y(2,i),'g*')
 
         xogo = xogz + k1*(y(:,i)-yhat1)
         pogo = pogz - k1*sogz*k1'
 
         error_ellipse(C*pogo*C' + R, C*xogo,0.99)
+        %estimation = [estimation C*xogo]
+        plot(estimation(1,:),estimation(2,:))
 
-        for j = 1:stepSize
+        for j = 1:falseAlarmNum
             plot(gateX(1,j)+y(1,i),gateY(1,j)+y(2,i),'r*')
         end
 
